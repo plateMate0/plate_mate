@@ -1,0 +1,138 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  name            String
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt()
+  deletedAt       DateTime?
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  permissionId Int
+  userRoleId   Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  userRole     UserRole   @relation(fields: [userRoleId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt()
+  deletedAt    DateTime?
+}
+
+model UserRole {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  users           User[]
+  rolePermissions RolePermission[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt()
+  deletedAt       DateTime?
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String    @unique
+  email      String    @unique
+  password   String
+  userRoleId Int
+  userRole   UserRole  @relation(fields: [userRoleId], references: [id])
+  plates     Plate[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt()
+  deletedAt  DateTime?
+}
+
+model Patient {
+  id        Int     @id @default(autoincrement())
+  firstName String
+  lastName  String
+  number    String
+  plates    Plate[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+
+  @@unique([firstName, lastName])
+}
+
+model Plate {
+  id        Int @id @default(autoincrement())
+  patientId Int
+
+  userId  Int
+  mediaId Int    @unique
+  notes   String
+
+  excel_path String?
+
+  result  Result?
+  image   Media   @relation(fields: [mediaId], references: [id])
+  patient Patient @relation(fields: [patientId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+}
+
+model Result {
+  id                   Int                   @id @default(autoincrement())
+  antibioticDetections AntibioticDetection[]
+  plateId              Int                   @unique
+  status               String
+  plate                Plate                 @relation(fields: [plateId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+}
+
+model AntibioticDetection {
+  id           Int        @id @default(autoincrement())
+  resultId     Int
+  antibioticId Int
+  antibiotic   Antibiotic @relation(fields: [antibioticId], references: [id])
+  Result       Result     @relation(fields: [resultId], references: [id])
+  value        Float
+  sir                  String                @default("R")
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+}
+
+model Antibiotic {
+  id                   Int                   @id @default(autoincrement())
+  name                 String
+  antibioticDetections AntibioticDetection[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+}
+
+model Media {
+  id    Int     @id @default(autoincrement())
+  path  String
+  name  String?
+  Plate Plate?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt()
+  deletedAt DateTime?
+}
+
+enum EUserRole {
+  SUPER_ADMIN
+  EMPLOYEE
+}
