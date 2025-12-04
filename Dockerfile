@@ -1,39 +1,24 @@
-# ---------- Stage 1: Build ----------
-FROM node:18-alpine AS builder
+FROM node:18-alpine
 
 WORKDIR /app
 
-# 1) Install all deps (including dev) for build + prisma
+# 1) تثبيت الباكجات
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
-# 2) Copy the rest of the project
+# 2) نسخ الكود كامل
 COPY . .
 
-# 3) Generate Prisma client
+# 3) توليد Prisma client
 RUN npx prisma generate
 
-# 4) Build NestJS → ينتج dist/src/main.js
+# 4) Build NestJS → يطلع dist/src/main.js
 RUN npm run build
 
 # 5) 🔥 إنشاء ملف dist/main.js يوجّه لـ dist/src/main.js
-RUN echo "require('./src/main');" > dist/main.js
-
-
-# ---------- Stage 2: Runtime ----------
-FROM node:18-alpine AS runner
-
-WORKDIR /app
-
-# فقط deps بدون dev لتخفيف الصورة
-COPY package*.json ./
-RUN npm install --omit=dev --legacy-peer-deps
-
-# ننسخ الـ dist والـ prisma من مرحلة الـ build
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+RUN node -e "const fs=require('fs');fs.writeFileSync('./dist/main.js', \"require('./src/main.js');\\n\");"
 
 EXPOSE 3000
 
-# ✅ الآن سواء المنصة شغّلت dist/main.js أو انت حاب تغيّر لاحقًا، كله تمام
-CMD ["npm", "run", "start:prod"]
+# 6) شغّل dist/main.js (سواء المنصة أو CMD، كله رح يشتغل)
+CMD ["node", "dist/main.js"]
