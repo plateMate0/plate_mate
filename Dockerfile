@@ -16,6 +16,9 @@ RUN npx prisma generate
 # 4) Build NestJS → ينتج dist/src/main.js
 RUN npm run build
 
+# 5) 🔥 إنشاء ملف dist/main.js يوجّه لـ dist/src/main.js
+RUN echo "require('./src/main');" > dist/main.js
+
 
 # ---------- Stage 2: Runtime ----------
 FROM node:18-alpine AS runner
@@ -32,5 +35,5 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-# ✅ شغّل الملف الصحيح
-CMD ["node", "dist/src/main.js"]
+# ✅ الآن سواء المنصة شغّلت dist/main.js أو انت حاب تغيّر لاحقًا، كله تمام
+CMD ["node", "dist/main.js"]
