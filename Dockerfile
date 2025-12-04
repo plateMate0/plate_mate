@@ -36,4 +36,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
 
 # ✅ الآن سواء المنصة شغّلت dist/main.js أو انت حاب تغيّر لاحقًا، كله تمام
-CMD ["node", "dist/src/main.js"]
+CMD ["npm", "run", "start:prod"]
