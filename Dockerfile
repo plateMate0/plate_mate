@@ -1,5 +1,5 @@
-FROM node:18-alpine
-
+# ---------- Stage 1: Build ----------
+FROM node:18-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -10,16 +10,23 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# ✅ Create dist/main.js if your build outputs dist/src/main.js
-RUN node -e "const fs=require('fs'); \
-  if (!fs.existsSync('./dist/main.js') && fs.existsSync('./dist/src/main.js')) { \
-    fs.writeFileSync('./dist/main.js', \"require('./src/main.js');\\n\"); \
-  }"
+# ✅ اصنع dist/main.js كـ entrypoint ثابت
+# بيحوّل التشغيل إلى dist/src/main.js
+RUN printf "require('./src/main.js');\n" > dist/main.js
 
-# ✅ Debug (optional, you can remove later)
-RUN ls -la dist/ && if [ -d \"dist/src\" ]; then ls -la dist/src/; fi
+# (اختياري للتشخيص)
+RUN ls -R dist
+
+# ---------- Stage 2: Runtime ----------
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --omit=dev --legacy-peer-deps
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
-# ✅ Important: run the shim
 CMD ["node", "dist/main.js"]

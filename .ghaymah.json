@@ -1,0 +1,12 @@
+{
+  "name": "plate-mate",
+  "ports": [
+    { "expose": true, "number": 3000 }
+  ],
+  "publicAccess": {
+    "enabled": true,
+    "domain": "auto"
+  },
+  "resourceTier": "t1",
+  "dockerFileName": "Dockerfile"
+}
